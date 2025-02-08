@@ -33,7 +33,6 @@ const generatePodcast = async (req, res) => {
             throw new Error("Audio processing failed.");
         }
           
-        // View the response.
         console.log(
             `Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri}`,
         );
@@ -47,7 +46,7 @@ const generatePodcast = async (req, res) => {
                 fileUri: uploadResult.file.uri
               }
             },
-            { text: "Generate a transcript of a podcast,highlight different commentators with timestamps during the conversation." },
+            { text: "Please provide a detailed transcription of this audio file, identifying each speaker with labels ('Speaker A', 'Speaker B', etc.) and including timestamps for each spoken phrase."  },
         ]);
         fs.unlinkSync(tempFilePath);
         return res.status(200).json({
