@@ -35,6 +35,17 @@ const AudioGenerator = () => {
         setIsPlaying(!isPlaying);
     }
 
+    const parseLine = (line) => {
+        const match = line.match(/\*\*(.*?)\*\*\s*(?:\[(\d{1,2}:\d{2})\]|\s*(\d{1,2}:\d{2}))\s*(.+)/);
+        if (!match) return null;
+    
+        return {
+            timestamp: match[2] || match[3],
+            speaker: match[1],
+            text: match[4],
+        };
+    };
+
     const handleGeneratePodcast = async () => {
         if (!selectedFile) return;
     
@@ -49,7 +60,12 @@ const AudioGenerator = () => {
           });
           const result = await response.json();
           if (response.ok) {
-            setResult(result);
+            let parsedScript = result.text
+            .split("\n")
+            .map(line =>  parseLine(line))
+            .filter(parsed => parsed !== null);
+
+            setResult(parsedScript);
           } else {
             console.error("Error generating podcast:", result.message);
           }
@@ -78,7 +94,15 @@ const AudioGenerator = () => {
                 {result && (
                     <div>
                         <h2>Generated Script:</h2>
-                        <p>{result.text}</p>
+                        {result.map((line, i) => {
+                            return (
+                                <div key={i} className="script-container">
+                                    <span style={{ fontWeight: 'bold', marginRight: '10px' }}>[{line.timestamp}]</span>
+                                    <span style={{ fontWeight: 'bold', marginRight: '10px' }}>{line.speaker}:</span>
+                                    <span>{line.text}</span>
+                                </div>
+                            )
+                        })}
                     </div>  
                 )}
             </div>
