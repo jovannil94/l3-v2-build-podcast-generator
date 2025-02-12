@@ -46,8 +46,18 @@ button:hover {
   color: black;
 }
 
+.stop-button {
+  border: 1px solid lightgray;
+  border-radius: 6px;
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  background-color: red;
+  color: white;
+}
+
 .script-container {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
+  overflow-wrap: break-word;
 }

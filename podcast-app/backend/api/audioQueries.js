@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { GoogleAIFileManager, FileState } = require("@google/generative-ai/server");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { resourceUsage } = require("process");
 
 const generatePodcast = async (req, res) => {
     if (!req.files || !req.files.audio) {
@@ -37,7 +38,7 @@ const generatePodcast = async (req, res) => {
             `Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri}`,
         );
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const result = await model.generateContent([
             {
@@ -46,13 +47,36 @@ const generatePodcast = async (req, res) => {
                 fileUri: uploadResult.file.uri
               }
             },
-            { text: "Please provide a detailed transcription of this audio file, identifying each speaker with labels ('Speaker A', 'Speaker B', etc.) and including timestamps for each spoken phrase."  },
+            { text: "Please provide a detailed transcription of this audio file, identifying each speaker of the podcast with labels ('Speaker 1', 'Speaker 2', etc.) and including timestamps for each spoken phrase.  Use a consistent format like **Speaker 1 [00:02]** Hey this happens all the time." },
         ]);
         fs.unlinkSync(tempFilePath);
+
+        let transcript = [];
+        console.log(result.response.text())
+        if(result.response.text()) {
+            transcript = result.response.text()
+            .trim()
+            .split("\n")
+            .map(line => {
+                //NOTICE: Gemini is a bit inconsitent with its output, this regex and parsing is meant to give frontend consistent formatting
+                const match = line.match(/^\*\*Speaker\s+(\d+)\s*\[?(\d{1,2}:\d{2}(?::\d{2})?)\]?\*\*\s*(.+)$/);
+                if(match) {
+                    return {
+                        speaker: `Speaker ${match[1]}`,
+                        timestamp: match[2] || null,
+                        text: match[3].trim(),
+                    };
+                } else {
+                    return null
+                }
+            })
+            .filter(parsed => parsed !== null);
+        }
+        
         return res.status(200).json({
             success: true,
             status: "Success transcribed audio file",
-            text: result.response.text(),
+            text: transcript,
         });
     } catch (error){
         console.error("Error with Gemini:", error);

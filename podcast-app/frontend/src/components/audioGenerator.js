@@ -4,6 +4,7 @@ const AudioGenerator = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [buttonName, setButtonName] = useState('Select Audio File');
+    const [buttonClass, setButtonClass] = useState('primary-button');
     const [isPlaying, setIsPlaying] = useState(false);
     const audioRef = useRef(null);
     const [audioUrl, setAudioUrl] = useState(null);
@@ -19,7 +20,6 @@ const AudioGenerator = () => {
         const file = e.target.files[0];
         if(file && file.type.startsWith('audio/')) {
             setSelectedFile(file);
-            setButtonName(file.name);
         } else {
             alert('Please select valid audio file');
             setSelectedFile(null);
@@ -29,8 +29,10 @@ const AudioGenerator = () => {
     const handlePlayPause = () => {
         if(isPlaying) {
             audioRef.current.pause();
+            setButtonClass("primary-button");
         } else {
             audioRef.current.play();
+            setButtonClass("stop-button");;
         }
         setIsPlaying(!isPlaying);
     }
@@ -44,9 +46,10 @@ const AudioGenerator = () => {
             speaker: match[1],
             text: match[4],
         };
-    };
+    };   
 
     const handleGeneratePodcast = async () => {
+        setResult(null);
         if (!selectedFile) return;
     
         setLoading(true);
@@ -60,17 +63,14 @@ const AudioGenerator = () => {
           });
           const result = await response.json();
           if (response.ok) {
-            let parsedScript = result.text
-            .split("\n")
-            .map(line =>  parseLine(line))
-            .filter(parsed => parsed !== null);
-
-            setResult(parsedScript);
+            setResult(result.text);
           } else {
             console.error("Error generating podcast:", result.message);
+            alert('Error generating podcast');
           }
         } catch (error) {
           console.error("Error:", error);
+          alert('There has been an error, we apologize for the inconvenience');
         } finally {
           setLoading(false);
         }
@@ -79,7 +79,10 @@ const AudioGenerator = () => {
     useEffect(() => {
         if (selectedFile) {
             setAudioUrl(URL.createObjectURL(selectedFile));
+            setButtonName(selectedFile.name);
+            setResult(null);
         }
+        
     }, [selectedFile]);
 
     return (
@@ -87,7 +90,7 @@ const AudioGenerator = () => {
             <button className="secondary-button" onClick={triggerFileInput}>{buttonName}</button>
             <input id="file-input" type="file" accept="audio/*" style={{ display: 'none' }} onChange={handleFileChange}/>
             {selectedFile ? <button className="primary-button" onClick={handleGeneratePodcast}>Generate Podcast</button> : null}
-            {selectedFile ? <button className="primary-button" onClick={handlePlayPause}>{isPlaying ? "Stop" : "Play Podcast"}</button>: null}
+            {selectedFile ? <button className={buttonClass} onClick={handlePlayPause}>{isPlaying ? "Stop" : "Play Podcast"}</button>: null}
             <audio ref={audioRef} src={audioUrl}/>
             <div>
                 {loading && <p>Generating Podcast...</p>}
