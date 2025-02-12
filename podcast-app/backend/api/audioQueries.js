@@ -52,7 +52,6 @@ const generatePodcast = async (req, res) => {
         fs.unlinkSync(tempFilePath);
 
         let transcript = [];
-        console.log(result.response.text())
         if(result.response.text()) {
             transcript = result.response.text()
             .trim()
